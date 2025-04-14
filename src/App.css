@@ -1,0 +1,15 @@
+.App {
+  text-align: center;
+  font-family: sans-serif;
+  padding: 2rem;
+}
+
+.device-section {
+  margin: 1.5rem 0;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
