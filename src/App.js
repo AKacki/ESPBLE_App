@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
+
 
 // UUIDs for Device 1 (DHT Sensor)
 const DHT_SERVICE_UUID = '12345678-1234-5678-1234-56789abcdef0';
 const TEMPERATURE_UUID = '12345678-1234-5678-1234-56789abcdef1';
 const HUMIDITY_UUID = '12345678-1234-5678-1234-56789abcdef2';
 
-// UUIDs for Device 2 (BMP Sensor)
-const BMP_SERVICE_UUID = '22345678-1234-5678-1234-56789abcdef0';
-const BMP_UUID = '22345678-1234-5678-1234-56789abcdef1';
+// UUIDs for Device 2 (Light Sensor)
+const Light_SERVICE_UUID = '22345678-1234-5678-1234-56789abcdef0';
+const Light_UUID = '22345678-1234-5678-1234-56789abcdef1';
 
-function App() {
+function SensorReadings() {
   // Device 1 states
   const [temperature, setTemperature] = useState(null);
   const [humidity, setHumidity] = useState(null);
@@ -19,6 +20,8 @@ function App() {
   // Device 2 states
   const [lightLevel, setLightLevel] = useState(null);
   const [isLightConnected, setIsLightConnected] = useState(false);
+
+  
 
   // Connect to DHT Sensor
   const connectDHTDevice = async () => {
@@ -37,6 +40,14 @@ function App() {
 
       const humChar = await service.getCharacteristic(HUMIDITY_UUID);
       const humValue = await humChar.readValue();
+
+      await tempChar.startNotifications();
+      await humChar.startNotifications();
+
+      tempChar.addEventListner('characteristicvaluechanged', (event) =>{
+        const temp = new TextDecoder().decode(event.target.value);
+        setTemperature(temp);
+      })
       setHumidity(new TextDecoder().decode(humValue));
     } catch (error) {
       console.error('Failed to connect to DHT device:', error);
@@ -47,13 +58,13 @@ function App() {
   const connectLightDevice = async () => {
     try {
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [LIGHT_SERVICE_UUID] }],
+        filters: [{ services: [Light_SERVICE_UUID] }],
       });
       const server = await device.gatt.connect();
       setIsLightConnected(true);
 
-      const service = await server.getPrimaryService(LIGHT_SERVICE_UUID);
-      const lightChar = await service.getCharacteristic(LIGHT_UUID);
+      const service = await server.getPrimaryService(Light_SERVICE_UUID);
+      const lightChar = await service.getCharacteristic(Light_UUID);
       const lightValue = await lightChar.readValue();
       setLightLevel(new TextDecoder().decode(lightValue));
     } catch (error) {
@@ -63,17 +74,17 @@ function App() {
 
   return (
     <div className="App">
-      <h1>📡 BLE Weather Station Dashboard</h1>
+      <h1>BLE Weather Station Dashboard</h1>
 
       <div className="device-section">
         <h2>Device 1: DHT Sensor</h2>
         <button onClick={connectDHTDevice} disabled={isDHTConnected}>
-          {isDHTConnected ? 'Connected ✅' : 'Connect DHT Device'}
+          {isDHTConnected ? 'Connected ' : 'Connect DHT Device'}
         </button>
         {temperature && humidity ? (
           <div>
-            <p>🌡️ Temperature: {temperature} °C</p>
-            <p>💧 Humidity: {humidity} %</p>
+            <p> Temperature: {temperature} °C</p>
+            <p> Humidity: {humidity} %</p>
           </div>
         ) : (
           <p>Waiting for DHT sensor data...</p>
@@ -82,13 +93,15 @@ function App() {
 
       <hr />
 
+      
+
       <div className="device-section">
         <h2>Device 2: Light Sensor</h2>
         <button onClick={connectLightDevice} disabled={isLightConnected}>
-          {isLightConnected ? 'Connected ✅' : 'Connect Light Device'}
+          {isLightConnected ? 'Connected ' : 'Connect Light Device'}
         </button>
         {lightLevel ? (
-          <p>💡 Light Level: {lightLevel}</p>
+          <p> Light Level: {lightLevel}</p>
         ) : (
           <p>Waiting for light sensor data...</p>
         )}
@@ -97,4 +110,4 @@ function App() {
   );
 }
 
-export default App;
+export default SensorReadings;
